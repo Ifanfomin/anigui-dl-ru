@@ -74,9 +74,11 @@ else()
 endif()
 
 add_custom_command(TARGET animedl POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/backend/dist/${BACKEND_BIN}
-        $<TARGET_FILE_DIR:animedl>/${BACKEND_BIN}
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+        $<TARGET_FILE_DIR:animedl>/backend
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/backend/dist/backend
+        $<TARGET_FILE_DIR:animedl>/backend
 )
 
 add_custom_command(TARGET animedl POST_BUILD

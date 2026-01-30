@@ -13,6 +13,7 @@
 #include <QDir>
 
 
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -49,7 +50,10 @@ private:
     Ui::MainWindow *ui;
 
     QSettings settings;
-    QString backendPath;
+    QString ytdlpDir;
+    QString ytdlpExe;
+    QString backendDir;
+    QString backendExe;
     QString ytdlpPath;
 
     QString buildSocks5Proxy() const;

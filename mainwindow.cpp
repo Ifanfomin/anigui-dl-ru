@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -10,12 +9,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     setWindowTitle("Anime Downloader");
 
+    backendDir = QCoreApplication::applicationDirPath() + "/backend";
+    ytdlpDir = QCoreApplication::applicationDirPath();
 #ifdef Q_OS_WIN
-    backendPath = "backend.exe";
-    ytdlpPath   = "yt-dlp.exe";
+    backendExe = backendDir + "/backend.exe";
+    ytdlpExe = ytdlpDir + "/yt-dlp.exe";
 #else
-    backendPath = "./backend";
-    ytdlpPath   = "./yt-dlp";
+
+    backendExe = backendDir + "/backend";
+    ytdlpExe = ytdlpDir + "/yt-dlp";
 #endif
 
     ui->label_github->setOpenExternalLinks(true);
@@ -45,11 +47,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_lineEditInput_returnPressed()
 {
-    animeName = ui->lineEditInput->text().trimmed();
-    if (animeName.isEmpty())
+    searchText = ui->lineEditInput->text().trimmed();
+    if (searchText.isEmpty())
         return;
 
-    searchText = animeName;
+    animeName = searchText;
     provider = ui->comboBoxProvider->currentText();
 
     ui->listWidgetAnime->clear();
@@ -170,8 +172,10 @@ void MainWindow::on_lineEditInput_returnPressed()
             });
 
     // запуск
-    process->start(backendPath, args);
-    timer->start(10'000);
+    process->setWorkingDirectory(backendDir);
+    process->start(backendExe, args);
+    timer->start(20'000);
+
 }
 
 void MainWindow::on_searchButton_clicked()
@@ -302,8 +306,9 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
             });
 
     // запуск
-    process->start(backendPath, args);
-    timer->start(10'000);
+    process->setWorkingDirectory(backendDir);
+    process->start(backendExe, args);
+    timer->start(20'000);
 }
 
 void MainWindow::on_listWidgetEpisode_itemClicked(QListWidgetItem *item)
@@ -437,8 +442,9 @@ void MainWindow::on_listWidgetEpisode_itemClicked(QListWidgetItem *item)
             });
 
     // запуск
-    process->start(backendPath, args);
-    timer->start(10'000);
+    process->setWorkingDirectory(backendDir);
+    process->start(backendExe, args);
+    timer->start(20'000);
 }
 
 void MainWindow::on_listWidgetSource_itemClicked(QListWidgetItem *item)
@@ -456,10 +462,6 @@ void MainWindow::on_listWidgetSource_itemClicked(QListWidgetItem *item)
     QTimer *timer = new QTimer(this);
 
     timer->setSingleShot(true);
-
-    std::cout << "proxy"
-              << proxyIp.toStdString() << proxyPort.toStdString() << proxyUser.toStdString() << proxyPass.toStdString()
-              << "videos" << provider.toStdString() << QString::number(animeIndex).toStdString() << animeName.toStdString() << QString::number(episodeIndex).toStdString() << QString::number(sourceIndex).toStdString() << std::endl;
 
     QStringList args;
     if (proxy) {
@@ -575,8 +577,9 @@ void MainWindow::on_listWidgetSource_itemClicked(QListWidgetItem *item)
             });
 
     // запуск
-    process->start(backendPath, args);
-    timer->start(10'000);
+    process->setWorkingDirectory(backendDir);
+    process->start(backendExe, args);
+    timer->start(20'000);
 }
 
 void MainWindow::on_listWidgetVideo_itemClicked(QListWidgetItem *item)
@@ -679,7 +682,8 @@ void MainWindow::on_downloadButton_clicked()
             });
 
     // стартуем yt-dlp
-    process->start(ytdlpPath, arguments);
+    process->setWorkingDirectory(ytdlpDir);
+    process->start(ytdlpExe, arguments);
 }
 
 void MainWindow::on_listWidgetProcess_itemClicked(QListWidgetItem *item)

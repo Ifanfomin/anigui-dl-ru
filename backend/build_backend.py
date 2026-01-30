@@ -18,7 +18,7 @@ BUILD_DIR  = BACKEND_DIR / "build"
 
 cmd = [
     sys.executable, "-m", "PyInstaller",
-    "--onefile",
+    "--onedir",
     "--hidden-import=socks",
     "--distpath", str(DIST_DIR),
     "--workpath", str(BUILD_DIR),
