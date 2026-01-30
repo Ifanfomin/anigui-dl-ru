@@ -1,0 +1,14 @@
+#!/bin/bash
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Пути бинарников
+export PATH="$HERE/usr/bin:$PATH"
+
+# Пути библиотек
+export LD_LIBRARY_PATH="$HERE/usr/lib:$HERE/usr/bin/backend:$LD_LIBRARY_PATH"
+
+# Qt
+export QT_PLUGIN_PATH="$HERE/usr/lib/qt6/plugins"
+export QML2_IMPORT_PATH="$HERE/usr/lib/qt6/qml"
+
+exec "$HERE/usr/bin/animedl" "$@"

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Anime Downloader
+Exec=animedl
+Icon=animedl
+Categories=Audio;Video;
+Terminal=false
+
