@@ -1,0 +1,3 @@
+anicli-ru
+pysocks
+pyinstaller
