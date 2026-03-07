@@ -18,20 +18,28 @@ cp ../icons/icon.png animedl.AppDir/animedl.png
 cp animedl.desktop animedl.AppDir/
 cp AppRun animedl.AppDir/
 
-# wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage 
+# wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 # wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
 # chmod +x linuxdeploy*.AppImage
 
+export QMAKE=qmake6
+export NO_STRIP=1  
 ./linuxdeploy-x86_64.AppImage \
   --appdir animedl.AppDir \
   --executable animedl.AppDir/usr/bin/animedl \
   --desktop-file animedl.AppDir/animedl.desktop \
-  --icon-file animedl.AppDir/animedl.png
+  --icon-file animedl.AppDir/animedl.png \
+  --plugin qt
 
+rm animedl.AppDir/usr/lib/libglib* 
+rm animedl.AppDir/usr/lib/libgobject-2.0* 
+rm animedl.AppDir/usr/lib/libgio-2.0* 
+
+./appimagetool-x86_64.AppImage animedl.AppDir
 # проверка до сборки
 # animedl.AppDir/AppRun
 
 # сборка
-./linuxdeploy-x86_64.AppImage --appdir animedl.AppDir --output appimage
+# ./linuxdeploy-x86_64.AppImage --appdir animedl.AppDir --output appimage
 
 mv Anime_Downloader-x86_64.AppImage animedl.AppImage
