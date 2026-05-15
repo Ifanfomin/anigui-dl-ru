@@ -9,9 +9,9 @@ cp -r /usr/lib/qt6/plugins/imageformats animedl.AppDir/usr/lib/qt6/plugins/
 cp -r /usr/lib/qt6/plugins/iconengines animedl.AppDir/usr/lib/qt6/plugins/
 cp -r /usr/lib/qt6/plugins/styles animedl.AppDir/usr/lib/qt6/plugins/
 
-cp ../build/Desktop-Release/animedl animedl.AppDir/usr/bin/
-cp -r ../build/Desktop-Release/backend animedl.AppDir/usr/bin/backend
-cp ../build/Desktop-Release/yt-dlp animedl.AppDir/usr/bin/
+cp ../build/Desktop-Debug/animedl animedl.AppDir/usr/bin/
+cp -r ../build/Desktop-Debug/backend animedl.AppDir/usr/bin/backend
+cp ../build/Desktop-Debug/yt-dlp animedl.AppDir/usr/bin/
 chmod +x animedl.AppDir/usr/bin/*
 
 cp ../icons/icon.png animedl.AppDir/animedl.png
@@ -40,6 +40,6 @@ rm animedl.AppDir/usr/lib/libgio-2.0*
 # animedl.AppDir/AppRun
 
 # сборка
-# ./linuxdeploy-x86_64.AppImage --appdir animedl.AppDir --output appimage
+./linuxdeploy-x86_64.AppImage --appdir animedl.AppDir --output appimage
 
 mv Anime_Downloader-x86_64.AppImage animedl.AppImage
