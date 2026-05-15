@@ -12,15 +12,12 @@
 ### Скачать релиз под вашу систему
 [Послдений релиз animedl v1.0.1](https://github.com/Ifanfomin/anigui-dl-ru/releases/tag/v1.0.1)
 ### Либо собрать самим
-0. Сборка не отличается на Linux или Windows (кроме пункта 6.1.)
-1. Скачиваете репозиторий
-2. Открываете проект CMakeLists.txt в QtCretor
-3. Делаете виртуальное окружение `python3 -m venv .venv`, входите в него
-4. Устанавливаете зависимости `pip install -r backend/requirements.txt`
-5. Собираете backend `python backend/build_backend.py`
-6. Собираете Qt проект  
-6.1. (Для полной независимости приложения на Windows пришлось ещё отдельно из терминала запустить `C:\Qt\6.x.x\mingw_x64\bin\windeployqt.exe animedl.exe`)
-7. Наслаждаетесь жизнью, пьёте чай после занятий
+1. В системе уже должны быть QtCreator и Python
+2. Скачиваете репозиторий
+3. Открываете проект CMakeLists.txt в QtCretor
+4. Собираете Qt проект  
+5. (Для полной независимости приложения на Windows пришлось ещё отдельно из терминала запустить `C:\Qt\6.x.x\mingw_64\bin\windeployqt.exe animedl.exe`)
+
 ## Основные использованные библиотеки и ПО
 - [anicli-ru](https://github.com/vypivshiy/ani-cli-ru) - основное апи, на котором и стоится всё приложение
 - [QtCreator](https://github.com/qt-creator/qt-creator) - весь фронт на Qt
