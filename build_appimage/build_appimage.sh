@@ -1,45 +1,58 @@
-#/usr/bin/sh
-rm -rf animedl.AppDir
-mkdir animedl.AppDir
-mkdir -p animedl.AppDir/usr/lib/qt6/plugins/
-mkdir animedl.AppDir/usr/bin/
+#!/usr/bin/env bash
+set -e
 
-cp -r /usr/lib/qt6/plugins/platforms animedl.AppDir/usr/lib/qt6/plugins/
-cp -r /usr/lib/qt6/plugins/imageformats animedl.AppDir/usr/lib/qt6/plugins/
-cp -r /usr/lib/qt6/plugins/iconengines animedl.AppDir/usr/lib/qt6/plugins/
-cp -r /usr/lib/qt6/plugins/styles animedl.AppDir/usr/lib/qt6/plugins/
+APP=animedl
+APPDIR=animedl.AppDir
 
-cp ../build/Desktop-Debug/animedl animedl.AppDir/usr/bin/
-cp -r ../build/Desktop-Debug/backend animedl.AppDir/usr/bin/backend
-cp ../build/Desktop-Debug/yt-dlp animedl.AppDir/usr/bin/
-chmod +x animedl.AppDir/usr/bin/*
+# Qt from installer
+export QMAKE=/home/ifan/Qt/6.11.1/gcc_64/bin/qmake
+export PATH="/home/ifan/Qt/6.11.1/gcc_64/bin:$PATH"
 
-cp ../icons/icon.png animedl.AppDir/animedl.png
-cp animedl.desktop animedl.AppDir/
-cp AppRun animedl.AppDir/
+# clean
+rm -rf "$APPDIR"
 
-# wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-# wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-# chmod +x linuxdeploy*.AppImage
+# basic structure
+mkdir -p "$APPDIR/usr/bin"
 
-export QMAKE=qmake6
-export NO_STRIP=1  
+# binaries
+cp ../build/animedl "$APPDIR/usr/bin/"
+cp -r ../build/backend "$APPDIR/usr/bin/"
+cp ../build/yt-dlp "$APPDIR/usr/bin/"
+
+chmod +x "$APPDIR/usr/bin/"*
+chmod +x "$APPDIR/usr/bin/backend/"* || true
+
+# desktop/icon
+cp animedl.desktop "$APPDIR/"
+cp ../icons/icon.png "$APPDIR/$APP.png"
+
+# AppRun
+cat > "$APPDIR/AppRun" << 'EOF'
+#!/bin/sh
+
+HERE="$(dirname "$(readlink -f "$0")")"
+
+export QT_PLUGIN_PATH="$HERE/usr/plugins"
+export QML2_IMPORT_PATH="$HERE/usr/qml"
+
+exec "$HERE/usr/bin/animedl" "$@"
+EOF
+
+chmod +x "$APPDIR/AppRun"
+
+# linuxdeploy tools
+chmod +x linuxdeploy-x86_64.AppImage
+chmod +x linuxdeploy-plugin-qt-x86_64.AppImage
+
+export NO_STRIP=1
+
+# build AppImage
 ./linuxdeploy-x86_64.AppImage \
-  --appdir animedl.AppDir \
-  --executable animedl.AppDir/usr/bin/animedl \
-  --desktop-file animedl.AppDir/animedl.desktop \
-  --icon-file animedl.AppDir/animedl.png \
-  --plugin qt
+    --appdir "$APPDIR" \
+    --executable "$APPDIR/usr/bin/animedl" \
+    --desktop-file "$APPDIR/animedl.desktop" \
+    --icon-file "$APPDIR/$APP.png" \
+    --plugin qt \
+    --output appimage
 
-rm animedl.AppDir/usr/lib/libglib* 
-rm animedl.AppDir/usr/lib/libgobject-2.0* 
-rm animedl.AppDir/usr/lib/libgio-2.0* 
-
-./appimagetool-x86_64.AppImage animedl.AppDir
-# проверка до сборки
-# animedl.AppDir/AppRun
-
-# сборка
-./linuxdeploy-x86_64.AppImage --appdir animedl.AppDir --output appimage
-
-mv Anime_Downloader-x86_64.AppImage animedl.AppImage
+mv Anime_Downloader-x86_64.AppImage "$APP.AppImage"
