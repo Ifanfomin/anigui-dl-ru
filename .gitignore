@@ -59,3 +59,4 @@ build/
 backend/build
 backend/dist
 backend/backend.spec
+build_appimage/
