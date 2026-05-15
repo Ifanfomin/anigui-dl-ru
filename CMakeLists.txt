@@ -24,6 +24,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         resources.qrc
+        logwindow.h logwindow.cpp logwindow.ui
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET animedl APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -68,10 +69,71 @@ install(TARGETS animedl
 if (WIN32)
     set(BACKEND_BIN backend.exe)
     set(YTDLP_BIN yt-dlp.exe)
+    set(YTDLP_URL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe")
 else()
     set(BACKEND_BIN backend)
     set(YTDLP_BIN yt-dlp)
+    set(YTDLP_URL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp")
 endif()
+
+set(YTDLP_PATH "${CMAKE_SOURCE_DIR}/backend/${YTDLP_BIN}")
+
+# Автоскачивание yt-dlp если отсутствует
+if (NOT EXISTS "${YTDLP_PATH}")
+    message(STATUS "yt-dlp not found. Downloading...")
+
+    file(DOWNLOAD
+        "${YTDLP_URL}"
+        "${YTDLP_PATH}"
+        SHOW_PROGRESS
+        STATUS DOWNLOAD_STATUS
+    )
+
+    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+
+    if (NOT STATUS_CODE EQUAL 0)
+        message(FATAL_ERROR "Failed to download yt-dlp")
+    endif()
+
+    if (UNIX)
+        execute_process(
+            COMMAND chmod +x "${YTDLP_PATH}"
+        )
+    endif()
+
+    message(STATUS "yt-dlp downloaded successfully")
+endif()
+
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+add_custom_target(bootstrap_backend
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/backend/bootstrap_backend.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/backend
+    COMMENT "Bootstrapping backend virtualenv"
+)
+
+add_custom_target(build_python_backend
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/backend/build_backend.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/backend
+    COMMENT "Building Python backend"
+)
+
+set(VENV_PATH "${CMAKE_SOURCE_DIR}/backend/.venv")
+set(BACKEND_DIST_PATH "${CMAKE_SOURCE_DIR}/backend/dist/backend")
+
+# Если .venv отсутствует, то сначала bootstrap
+if(NOT EXISTS "${VENV_PATH}")
+    add_dependencies(build_python_backend bootstrap_backend)
+endif()
+
+# Если backend ещё не собран, то собираем
+if(NOT EXISTS "${BACKEND_DIST_PATH}")
+    add_dependencies(animedl build_python_backend)
+endif()
+
 
 add_custom_command(TARGET animedl POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -rf

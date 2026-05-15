@@ -11,6 +11,11 @@
 #include <QTimer>
 #include <QStandardPaths>
 #include <QDir>
+#include <QFontMetrics>
+#include <QFileDialog>
+#include <QAbstractItemView>
+
+#include "logwindow.h"
 
 
 
@@ -32,7 +37,8 @@ private slots:
     void on_lineEditInput_returnPressed();
     void on_searchButton_clicked();
     void on_listWidgetAnime_itemClicked(QListWidgetItem *item);
-    void on_listWidgetEpisode_itemClicked(QListWidgetItem *item);
+    void on_listWidgetEpisodesSingle_itemClicked(QListWidgetItem *item);
+    void on_pushButtonEpisodesMany_clicked();
     void on_listWidgetSource_itemClicked(QListWidgetItem *item);
     void on_listWidgetVideo_itemClicked(QListWidgetItem *item);
     void on_downloadButton_clicked();
@@ -45,6 +51,10 @@ private slots:
     void on_lineEditPort_textChanged(const QString &text);
     void on_lineEditUser_textChanged(const QString &text);
     void on_lineEditPass_textChanged(const QString &text);
+
+    void on_logProcessButton_clicked();
+
+    void on_pushButtonBrowse_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -67,13 +77,14 @@ private:
     QString searchText;
     int animeIndex = -1;
     QString animeName;
-    int episodeIndex = -1;
+    QList<int> episodesIndexes;
     int sourceIndex = -1;
     QString dubName;
-    QString videoUrl;
     QString videoQuality;
     QString videoType;
 
     QListWidgetItem *processItem = nullptr;
+
+    LogWindow *logWindow;
 };
 #endif // MAINWINDOW_H
