@@ -36,16 +36,16 @@ def search_anime(provider, name):
     else:
         return [{"title": "empty search result"}]
 
-def get_episodes(provider, anime_num, anime_name):
+def get_episodes(provider, anime_name, anime_num):
     ex = get_extractor(provider)
     results = ex.search(anime_name)
     episodes = results[anime_num].get_anime().get_episodes()
     return [{"title": f"{i + 1}. {episode.title}"} for i, episode in enumerate(episodes)]
 
-def get_sources(provider, anime_num, anime_name, episode_num):
+def get_sources(provider, anime_name, anime_num, episodes_nums):
     ex = get_extractor(provider)
     results = ex.search(anime_name)
-    sources = results[anime_num].get_anime().get_episodes()[episode_num].get_sources()
+    sources = results[anime_num].get_anime().get_episodes()[episodes_nums[0]].get_sources()
     output = []
     for i, source in enumerate(sources):
         if len(source.url.split("/")) > 2:
@@ -55,15 +55,31 @@ def get_sources(provider, anime_num, anime_name, episode_num):
     
     return output
 
-def get_videos(provider, anime_num, anime_name, episode_num, source_num):
+def get_video_qualities(provider, anime_name, anime_num, episodes_nums, source_num):
     ex = get_extractor(provider)
     results = ex.search(anime_name)
-    videos = results[anime_num].get_anime().get_episodes()[episode_num].get_sources()[source_num].get_videos()
+    videos = results[anime_num].get_anime().get_episodes()[episodes_nums[0]].get_sources()[source_num].get_videos()
+
     return [{
         "title": f"{video.quality}",
         "url": video.url,
         "type": video.type
-    } for video in videos]    
+    } for video in videos]
+
+def get_videos_urls(provider, anime_name, anime_num, episodes_nums, source_num):
+    ex = get_extractor(provider)
+    results = ex.search(anime_name)
+    episodes = results[anime_num].get_anime().get_episodes()
+    videos = []
+    for num, episode in enumerate(episodes):
+        if num in episodes_nums:
+            videos.append(episode.get_sources()[source_num].get_videos())
+
+    return [[{
+        "title": f"{url.quality}",
+        "url": url.url,
+        "type": url.type
+    } for url in video] for video in videos]
 
 def main():
     n = 0
@@ -81,29 +97,37 @@ def main():
 
     if sys.argv[n + 1] == "search":
         provider = sys.argv[n + 2]
-        name = sys.argv[n + 3]
-        print(json.dumps(search_anime(provider, name), ensure_ascii=False))
+        anime_name = sys.argv[n + 3]
+        print(json.dumps(search_anime(provider, anime_name), ensure_ascii=False))
 
     elif sys.argv[n + 1] == "episodes":
         provider = sys.argv[n + 2]
-        anime_num = int(sys.argv[n + 3])
-        anime_name = sys.argv[n + 4]
-        print(json.dumps(get_episodes(provider, anime_num, anime_name), ensure_ascii=False))
+        anime_name = sys.argv[n + 3]
+        anime_num = int(sys.argv[n + 4])
+        print(json.dumps(get_episodes(provider, anime_name, anime_num), ensure_ascii=False))
     
     elif sys.argv[n + 1] == "sources":
         provider = sys.argv[n + 2]
-        anime_num = int(sys.argv[n + 3])
-        anime_name = sys.argv[n + 4]
-        episode_num = int(sys.argv[n + 5])
-        print(json.dumps(get_sources(provider, anime_num, anime_name, episode_num), ensure_ascii=False))
+        anime_name = sys.argv[n + 3]
+        anime_num = int(sys.argv[n + 4])
+        episodes_nums = [int(x) for x in sys.argv[n + 5].split()]
+        print(json.dumps(get_sources(provider, anime_name, anime_num, episodes_nums), ensure_ascii=False))
     
-    elif sys.argv[n + 1] == "videos":
+    elif sys.argv[n + 1] == "video_qualities":
         provider = sys.argv[n + 2]
-        anime_num = int(sys.argv[n + 3])
-        anime_name = sys.argv[n + 4]
-        episode_num = int(sys.argv[n + 5])
+        anime_name = sys.argv[n + 3]
+        anime_num = int(sys.argv[n + 4])
+        episodes_nums = [int(x) for x in sys.argv[n + 5].split()]
         source_num = int(sys.argv[n + 6])
-        print(json.dumps(get_videos(provider, anime_num, anime_name, episode_num, source_num), ensure_ascii=False))
+        print(json.dumps(get_video_qualities(provider, anime_name, anime_num, episodes_nums, source_num), ensure_ascii=False))
+
+    elif sys.argv[n + 1] == "videos_urls":
+        provider = sys.argv[n + 2]
+        anime_name = sys.argv[n + 3]
+        anime_num = int(sys.argv[n + 4])
+        episodes_nums = [int(x) for x in sys.argv[n + 5].split()]
+        source_num = int(sys.argv[n + 6])
+        print(json.dumps(get_videos_urls(provider, anime_name, anime_num, episodes_nums, source_num), ensure_ascii=False))
     
 if __name__ == "__main__":
     main()

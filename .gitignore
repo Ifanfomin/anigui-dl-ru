@@ -59,3 +59,7 @@ build/
 backend/build
 backend/dist
 backend/backend.spec
+backend/bootstrap_backend.py.save
+backend/bootstrap_backend.py.save
+backend/yt-dlp
+backend/yt-dlp.exe

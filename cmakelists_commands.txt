@@ -1,0 +1,2 @@
+cmake --build build --target bootstrap_backend
+cmake --build build --target build_python_backend
