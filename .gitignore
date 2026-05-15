@@ -59,5 +59,8 @@ build/
 backend/build
 backend/dist
 backend/backend.spec
+backend/bootstrap_backend.py.save
+backend/yt-dlp
+
 build_appimage/animedl.AppDir
 build_appimage/animedl.AppImage

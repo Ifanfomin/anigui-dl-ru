@@ -7,10 +7,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setFixedSize(size());
+
     setWindowTitle("Anime Downloader");
 
     backendDir = QCoreApplication::applicationDirPath() + "/backend";
     ytdlpDir = QCoreApplication::applicationDirPath();
+
 #ifdef Q_OS_WIN
     backendExe = backendDir + "/backend.exe";
     ytdlpExe = ytdlpDir + "/yt-dlp.exe";
@@ -38,6 +41,20 @@ MainWindow::MainWindow(QWidget *parent)
     ui->checkBoxSocks->setChecked(
         settings.value("proxy/enabled", false).toBool()
     );
+
+    QString defaultPath =
+        QStandardPaths::writableLocation(
+            QStandardPaths::DownloadLocation
+            ) + "/Anime";
+
+    QString savePath = settings.value(
+                                   "download/path",
+                                   defaultPath
+                                   ).toString();
+
+    ui->lineEditSavePath->setText(savePath);
+
+    logWindow = new LogWindow(this);
 }
 
 MainWindow::~MainWindow()
@@ -55,8 +72,10 @@ void MainWindow::on_lineEditInput_returnPressed()
     provider = ui->comboBoxProvider->currentText();
 
     ui->listWidgetAnime->clear();
-    ui->listWidgetEpisode->clear();
+    ui->listWidgetEpisodesSingle->clear();
+    ui->listWidgetEpisodesMany->clear();
     ui->listWidgetSource->clear();
+    ui->listWidgetVideo->clear();
 
     QListWidgetItem *loading = new QListWidgetItem("Поиск...");
     loading->setFlags(Qt::NoItemFlags);
@@ -71,11 +90,11 @@ void MainWindow::on_lineEditInput_returnPressed()
     QStringList args;
     if (proxy) {
         args << "proxy"
-             << proxyIp << proxyPort << proxyUser << proxyPass
-             << "search" << provider << searchText;
-    } else {
-        args << "search" << provider << searchText;
+             << proxyIp << proxyPort << proxyUser << proxyPass;
     }
+    args << "search"
+         << provider
+         << searchText;
 
     // таймер вышел
     connect(timer, &QTimer::timeout, this, [=]() {
@@ -188,14 +207,20 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
     animeIndex = ui->listWidgetAnime->row(item);
     animeName = item->text();
 
-    ui->listWidgetEpisode->clear();
+    ui->listWidgetEpisodesSingle->clear();
+    ui->listWidgetEpisodesMany->clear();
     ui->listWidgetSource->clear();
     ui->listWidgetVideo->clear();
+    
+    QListWidgetItem *loadingSingle = new QListWidgetItem("Поиск...");
+    loadingSingle->setFlags(Qt::NoItemFlags);
+    loadingSingle->setForeground(Qt::gray);
+    ui->listWidgetEpisodesSingle->addItem(loadingSingle);
 
-    QListWidgetItem *loading = new QListWidgetItem("Поиск...");
-    loading->setFlags(Qt::NoItemFlags);
-    loading->setForeground(Qt::gray);
-    ui->listWidgetEpisode->addItem(loading);
+    QListWidgetItem *loadingMany = new QListWidgetItem("Поиск...");
+    loadingMany->setFlags(Qt::NoItemFlags);
+    loadingMany->setForeground(Qt::gray);
+    ui->listWidgetEpisodesMany->addItem(loadingMany);
 
     QProcess *process = new QProcess(this);
     QTimer *timer = new QTimer(this);
@@ -205,11 +230,12 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
     QStringList args;
     if (proxy) {
         args << "proxy"
-             << proxyIp << proxyPort << proxyUser << proxyPass
-             << "episodes" << provider << QString::number(animeIndex) << searchText;
-    } else {
-        args << "episodes" << provider << QString::number(animeIndex) << searchText;
+             << proxyIp << proxyPort << proxyUser << proxyPass;
     }
+    args << "episodes"
+         << provider
+         << searchText
+         << QString::number(animeIndex);
 
     // таймер вышел
     connect(timer, &QTimer::timeout, this, [=]() {
@@ -217,7 +243,8 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
         process->deleteLater();
         timer->deleteLater();
 
-        ui->listWidgetEpisode->clear();
+        ui->listWidgetEpisodesSingle->clear();
+        ui->listWidgetEpisodesMany->clear();
 
         QListWidgetItem *msg1 = new QListWidgetItem(
             "Эпизоды не найдены"
@@ -231,8 +258,11 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
         msg1->setForeground(Qt::gray);
         msg2->setForeground(Qt::gray);
 
-        ui->listWidgetEpisode->addItem(msg1);
-        ui->listWidgetEpisode->addItem(msg2);
+        ui->listWidgetEpisodesSingle->addItem(msg1);
+        ui->listWidgetEpisodesSingle->addItem(msg2);
+
+        ui->listWidgetEpisodesMany->addItem(msg1);
+        ui->listWidgetEpisodesMany->addItem(msg2);
     });
 
     // процесс завершился
@@ -244,7 +274,8 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
                 timer->stop();
                 timer->deleteLater();
 
-                ui->listWidgetEpisode->clear();
+                ui->listWidgetEpisodesSingle->clear();
+                ui->listWidgetEpisodesMany->clear();
 
                 if (status != QProcess::NormalExit || exitCode != 0) {
                     QListWidgetItem *msg1 = new QListWidgetItem(
@@ -257,8 +288,11 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
                     msg1->setForeground(Qt::gray);
                     msg2->setFlags(Qt::NoItemFlags);
                     msg2->setForeground(Qt::gray);
-                    ui->listWidgetEpisode->addItem(msg1);
-                    ui->listWidgetEpisode->addItem(msg2);
+                    ui->listWidgetEpisodesSingle->addItem(msg1);
+                    ui->listWidgetEpisodesSingle->addItem(msg2);
+
+                    ui->listWidgetEpisodesMany->addItem(msg1);
+                    ui->listWidgetEpisodesMany->addItem(msg2);
 
                     process->deleteLater();
                     return;
@@ -274,7 +308,8 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
                         );
                     msg->setFlags(Qt::NoItemFlags);
                     msg->setForeground(Qt::gray);
-                    ui->listWidgetEpisode->addItem(msg);
+                    ui->listWidgetEpisodesSingle->addItem(msg);
+                    ui->listWidgetEpisodesMany->addItem(msg);
                 } else {
                     QJsonObject first = arr.first().toObject();
                     if (first["title"].toString() == "empty search result") {
@@ -291,11 +326,17 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
                         msg1->setForeground(Qt::gray);
                         msg2->setForeground(Qt::gray);
 
-                        ui->listWidgetEpisode->addItem(msg1);
-                        ui->listWidgetEpisode->addItem(msg2);
+                        ui->listWidgetEpisodesSingle->addItem(msg1);
+                        ui->listWidgetEpisodesSingle->addItem(msg2);
+
+                        ui->listWidgetEpisodesMany->addItem(msg1);
+                        ui->listWidgetEpisodesMany->addItem(msg2);
                     } else {
                         for (const QJsonValue &v : arr) {
-                            ui->listWidgetEpisode->addItem(
+                            ui->listWidgetEpisodesSingle->addItem(
+                                v.toObject()["title"].toString()
+                                );
+                            ui->listWidgetEpisodesMany->addItem(
                                 v.toObject()["title"].toString()
                                 );
                         }
@@ -311,9 +352,11 @@ void MainWindow::on_listWidgetAnime_itemClicked(QListWidgetItem *item)
     timer->start(20'000);
 }
 
-void MainWindow::on_listWidgetEpisode_itemClicked(QListWidgetItem *item)
+void MainWindow::on_listWidgetEpisodesSingle_itemClicked(QListWidgetItem *item)
 {
-    episodeIndex = ui->listWidgetEpisode->row(item);
+    episodesIndexes.clear();
+    episodesIndexes.append(ui->listWidgetEpisodesSingle->row(item));
+
     ui->listWidgetSource->clear();
     ui->listWidgetVideo->clear();
 
@@ -330,11 +373,157 @@ void MainWindow::on_listWidgetEpisode_itemClicked(QListWidgetItem *item)
     QStringList args;
     if (proxy) {
         args << "proxy"
-             << proxyIp << proxyPort << proxyUser << proxyPass
-             << "sources" << provider << QString::number(animeIndex) << searchText << QString::number(episodeIndex);
-    } else {
-        args << "sources" << provider << QString::number(animeIndex) << searchText << QString::number(episodeIndex);
+             << proxyIp << proxyPort << proxyUser << proxyPass;
     }
+    args << "sources"
+         << provider
+         << searchText
+         << QString::number(animeIndex)
+         << QString::number(episodesIndexes.last());
+
+    // таймер вышел
+    connect(timer, &QTimer::timeout, this, [=]() {
+        process->kill();
+        process->deleteLater();
+        timer->deleteLater();
+
+        ui->listWidgetSource->clear();
+
+        QListWidgetItem *msg1 = new QListWidgetItem(
+            "Озвучки не найдены"
+            );
+        QListWidgetItem *msg2 = new QListWidgetItem(
+            "Попробуйте изменить источник или повторить позже"
+            );
+
+        msg1->setFlags(Qt::NoItemFlags);
+        msg2->setFlags(Qt::NoItemFlags);
+        msg1->setForeground(Qt::gray);
+        msg2->setForeground(Qt::gray);
+
+        ui->listWidgetSource->addItem(msg1);
+        ui->listWidgetSource->addItem(msg2);
+    });
+
+    // процесс завершился
+    connect(process,
+            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this,
+            [=](int exitCode, QProcess::ExitStatus status) {
+
+                timer->stop();
+                timer->deleteLater();
+
+                ui->listWidgetSource->clear();
+
+                if (status != QProcess::NormalExit || exitCode != 0) {
+                    QListWidgetItem *msg1 = new QListWidgetItem(
+                        "Ошибка при поиске озвучек"
+                        );
+                    QListWidgetItem *msg2 = new QListWidgetItem(
+                        "Измените источник или попробуйте позже"
+                        );
+                    msg1->setFlags(Qt::NoItemFlags);
+                    msg1->setForeground(Qt::gray);
+                    msg2->setFlags(Qt::NoItemFlags);
+                    msg2->setForeground(Qt::gray);
+                    ui->listWidgetSource->addItem(msg1);
+                    ui->listWidgetSource->addItem(msg2);
+
+                    process->deleteLater();
+                    return;
+                }
+
+                QByteArray output = process->readAllStandardOutput();
+                QJsonDocument doc = QJsonDocument::fromJson(output);
+                QJsonArray arr = doc.array();
+
+                if (arr.isEmpty()) {
+                    QListWidgetItem *msg = new QListWidgetItem(
+                        "Пустой ответ от источника"
+                        );
+                    msg->setFlags(Qt::NoItemFlags);
+                    msg->setForeground(Qt::gray);
+                    ui->listWidgetSource->addItem(msg);
+                } else {
+                    QJsonObject first = arr.first().toObject();
+                    if (first["title"].toString() == "empty search result") {
+
+                        QListWidgetItem *msg1 = new QListWidgetItem(
+                            "Озыучки не найдены"
+                            );
+                        QListWidgetItem *msg2 = new QListWidgetItem(
+                            "Измените источник или попробуйте позже"
+                            );
+
+                        msg1->setFlags(Qt::NoItemFlags);
+                        msg2->setFlags(Qt::NoItemFlags);
+                        msg1->setForeground(Qt::gray);
+                        msg2->setForeground(Qt::gray);
+
+                        ui->listWidgetSource->addItem(msg1);
+                        ui->listWidgetSource->addItem(msg2);
+                    } else {
+                        for (const QJsonValue &v : arr) {
+                            QJsonObject obj = v.toObject();
+                            QString title = obj["title"].toString();
+                            QString url = obj["url"].toString();
+
+                            QString item_title;
+                            if (url.isEmpty()) {
+                                item_title = title;
+                            } else {
+                                item_title = QString("%1 [плеер] %2").arg(title, url);
+                            }
+                            QListWidgetItem *item = new QListWidgetItem(item_title);
+                            item->setData(Qt::UserRole, title);
+
+                            ui->listWidgetSource->addItem(item);
+                        }
+                    }
+                }
+
+                process->deleteLater();
+            });
+
+    // запуск
+    process->setWorkingDirectory(backendDir);
+    process->start(backendExe, args);
+    timer->start(20'000);
+}
+
+void MainWindow::on_pushButtonEpisodesMany_clicked()
+{
+    episodesIndexes.clear();
+    QList<QListWidgetItem*> selectedItems = ui->listWidgetEpisodesMany->selectedItems();
+
+    for (QListWidgetItem *item : selectedItems) {
+        episodesIndexes.append(
+            ui->listWidgetEpisodesMany->row(item));
+    }
+    ui->listWidgetSource->clear();
+    ui->listWidgetVideo->clear();
+
+    QListWidgetItem *loading = new QListWidgetItem("Поиск...");
+    loading->setFlags(Qt::NoItemFlags);
+    loading->setForeground(Qt::gray);
+    ui->listWidgetSource->addItem(loading);
+
+    QProcess *process = new QProcess(this);
+    QTimer *timer = new QTimer(this);
+
+    timer->setSingleShot(true);
+
+    QStringList args;
+    if (proxy) {
+        args << "proxy"
+             << proxyIp << proxyPort << proxyUser << proxyPass;
+    }
+    args << "sources"
+         << provider
+         << searchText
+         << QString::number(animeIndex)
+         << QString::number(episodesIndexes.last());
 
     // таймер вышел
     connect(timer, &QTimer::timeout, this, [=]() {
@@ -466,11 +655,14 @@ void MainWindow::on_listWidgetSource_itemClicked(QListWidgetItem *item)
     QStringList args;
     if (proxy) {
         args << "proxy"
-             << proxyIp << proxyPort << proxyUser << proxyPass
-             << "videos" << provider << QString::number(animeIndex) << searchText << QString::number(episodeIndex) << QString::number(sourceIndex);
-    } else {
-        args << "videos" << provider << QString::number(animeIndex) << searchText << QString::number(episodeIndex) << QString::number(sourceIndex);
+             << proxyIp << proxyPort << proxyUser << proxyPass;
     }
+    args << "video_qualities"
+         << provider
+         << searchText
+         << QString::number(animeIndex)
+         << QString::number(episodesIndexes.last())
+         << QString::number(sourceIndex);
 
     // таймер вышел
     connect(timer, &QTimer::timeout, this, [=]() {
@@ -558,7 +750,7 @@ void MainWindow::on_listWidgetSource_itemClicked(QListWidgetItem *item)
                         for (const QJsonValue &v : arr) {
                             QJsonObject obj = v.toObject();
 
-                            QString title = QString("Качество: %1p").arg(obj["title"].toString());
+                            QString title = QString("Качество: %1p %2").arg(obj["title"].toString(), obj["type"].toString());
                             QString url = obj["url"].toString();
                             QString quality = obj["title"].toString();
                             QString type = obj["type"].toString();
@@ -584,9 +776,9 @@ void MainWindow::on_listWidgetSource_itemClicked(QListWidgetItem *item)
 
 void MainWindow::on_listWidgetVideo_itemClicked(QListWidgetItem *item)
 {
-    videoUrl = item->data(Qt::UserRole).toString();
+    // videoUrl = item->data(Qt::UserRole).toString();
     videoQuality = item->data(Qt::UserRole + 1).toString();
-    videoType   = item->data(Qt::UserRole + 2).toString();
+    videoType = item->data(Qt::UserRole + 2).toString();
 }
 
 QString MainWindow::buildSocks5Proxy() const
@@ -603,87 +795,219 @@ QString MainWindow::buildSocks5Proxy() const
 
 void MainWindow::on_downloadButton_clicked()
 {
-    QString downloadsDir =
-        QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    // надо локально в функции сохранить всё что было указано, и потом можно не волноваться о том что может стереться/измениться
 
-    QString animeDir = downloadsDir + "/Anime";
+    QList<int> localEpisodesIndexes = episodesIndexes;
+    QString localVideoQuality = videoQuality;
+    QString localVideoType = videoType;
+    int localProcessesCount = ui->spinBoxProcesses->value();
+    QString localAnimeName = animeName;
+    QString localDubName = dubName;
+
+    QString animeDir;
+
+    if (ui->lineEditSavePath->text().trimmed().isEmpty()) {
+        QString downloadsDir =
+            QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+
+        animeDir = downloadsDir + "/Anime";
+    } else {
+        animeDir = ui->lineEditSavePath->text().trimmed();
+    }
+
     QDir().mkpath(animeDir);
 
-    QString outputTemplate = QString(
-                                 "%1/%2/[%3] %4. %5 %2.%(ext)s"
-                                 ).arg(
-                                     animeDir,
-                                     animeName,
-                                     dubName,
-                                     QString::number(episodeIndex + 1),
-                                     videoQuality
-                                     );
+    QList<int> pendingEpisodes = localEpisodesIndexes;
 
-    QStringList arguments;
+    auto startNextGroup = std::make_shared<std::function<void()>>();
 
-    if (proxy) {
-        arguments << "--proxy" << buildSocks5Proxy();
-    }
+    *startNextGroup = [=, this]() mutable
+    {
+        if (pendingEpisodes.isEmpty()) {
+            qDebug() << "all downloads finished";
+            return;
+        }
 
-    // общие флаги
-    arguments << "--no-part"
-              << "--continue";
+        QList<int> group = pendingEpisodes.mid(0, localProcessesCount);
+        QString groupString;
+        for (int n : group){
+            groupString += QString::number(n) + " ";
+        }
 
-    if (videoType == "m3u8") {
-        arguments << "--merge-output-format" << "mp4";
-    }
+        pendingEpisodes = pendingEpisodes.mid(group.size());
 
-    arguments << "-o" << outputTemplate
-              << videoUrl;
+        QSharedPointer<int> finishedCount(new int(0));
+        int total = group.size();
 
-    // создаём процесс
-    QProcess *process = new QProcess(this);
+        // получаем ссылки для скачивания
+        QProcess *process = new QProcess(this);
+        QStringList args;
+        if (proxy) {
+            args << "proxy"
+                 << proxyIp << proxyPort << proxyUser << proxyPass;
+        }
+        args << "videos_urls"
+             << provider
+             << searchText
+             << QString::number(animeIndex)
+             << groupString
+             << QString::number(sourceIndex);
 
-    // создаём элемент списка процессов
-    QString title = QString(
-                        "ep %1 | %2 | %3"
-                        ).arg(
-                            QString::number(episodeIndex + 1),
-                            animeName,
-                            videoQuality
-                            );
-
-    QListWidgetItem *item = new QListWidgetItem(title);
-
-    // сохраняем указатель на процесс
-    item->setData(
-        Qt::UserRole,
-        QVariant::fromValue<quintptr>(
-            reinterpret_cast<quintptr>(process)
-            )
-        );
-
-    ui->listWidgetProcess->addItem(item);
-
-    // stdout
-    connect(process, &QProcess::readyReadStandardOutput, this, [process]() {
-        qDebug().noquote() << process->readAllStandardOutput();
-    });
-
-    // stderr
-    connect(process, &QProcess::readyReadStandardError, this, [process]() {
-        qDebug().noquote() << process->readAllStandardError();
-    });
-
-    // завершение процесса
-    connect(process,
+        connect(process,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
-            [this, item, process](int code, QProcess::ExitStatus) {
+            [=](int exitCode, QProcess::ExitStatus status) {
 
-                item->setText("✔ " + item->text());
+                QByteArray output = process->readAllStandardOutput();
+                QJsonDocument doc = QJsonDocument::fromJson(output);
+                QJsonArray arr = doc.array();
 
-                process->deleteLater();
-            });
+                QStringList urls;
 
-    // стартуем yt-dlp
-    process->setWorkingDirectory(ytdlpDir);
-    process->start(ytdlpExe, arguments);
+                for (const QJsonValue &episodeValue : arr) {
+
+                    QJsonArray videos = episodeValue.toArray();
+
+                    QString foundUrl;
+
+                    for (const QJsonValue &videoValue : videos) {
+
+                        QJsonObject obj = videoValue.toObject();
+
+                        if (obj["title"].toString() == localVideoQuality) {
+                            foundUrl =
+                                obj["url"].toString();
+
+                            break;
+                        }
+                    }
+                    urls << foundUrl;
+                }
+
+                for (int i = 0; i < group.size(); i++) {
+                    int episodeIndex = group[i];
+                    QString videoUrl = urls[i];
+
+                    QString outputTemplate = QString(
+                                                 "%1/%2/[%3] %4. %5 %2.%(ext)s"
+                                                 ).arg(
+                                                     animeDir,
+                                                     localAnimeName,
+                                                     localDubName,
+                                                     QString::number(episodeIndex + 1),
+                                                     localVideoQuality
+                                                     );
+
+                    QStringList arguments;
+
+                    if (proxy) {
+                        arguments << "--proxy" << buildSocks5Proxy();
+                    }
+
+                    // общие флаги
+                    arguments << "--no-part"
+                              << "--continue";
+
+                    if (localVideoType == "m3u8") {
+                        arguments << "--merge-output-format" << "mp4";
+                    }
+
+                    arguments << "-o" << outputTemplate
+                              << videoUrl;
+
+                    // создаём процесс
+                    QProcess *process = new QProcess(this);
+
+                    // создаём элемент списка процессов
+                    QString title = QString(
+                                        "ep %1 | %2 | %3"
+                                        ).arg(
+                                            QString::number(episodeIndex + 1),
+                                            localAnimeName,
+                                            localVideoQuality
+                                            );
+
+                    // делаем короче
+                    QFontMetrics metrics(font());
+
+                    title = metrics.elidedText(
+                        title,
+                        Qt::ElideMiddle,
+                        200
+                        );
+
+                    QListWidgetItem *item =
+                        new QListWidgetItem(title);
+
+                    // делаем его таб
+                    logWindow->createProcessTab(process, title);
+
+                    // сохраняем указатель на процесс
+                    item->setData(
+                        Qt::UserRole,
+                        QVariant::fromValue<quintptr>(
+                            reinterpret_cast<quintptr>(process)
+                            )
+                        );
+
+                    ui->listWidgetProcess->addItem(item);
+
+                    // stdout
+                    connect(process,
+                            &QProcess::readyReadStandardOutput,
+                            this,
+                            [this, process]()
+                            {
+                                QString text = QString::fromUtf8(
+                                    process->readAllStandardOutput()
+                                    );
+
+                                logWindow->appendProcessLog(process, text);
+                            });
+
+                    // stderr
+                    connect(process,
+                            &QProcess::readyReadStandardError,
+                            this,
+                            [this, process]()
+                            {
+                                QString text = QString::fromUtf8(
+                                    process->readAllStandardError()
+                                    );
+
+                                logWindow->appendProcessLog(process, text);
+                            });
+
+                    // завершение процесса
+                    connect(process,
+                            QOverload<int,
+                                      QProcess::ExitStatus>::of(
+                                &QProcess::finished),
+                            this,
+                            [=](int,
+                                                 QProcess::ExitStatus) mutable
+                            {
+                                item->setText("✔ " + item->text());
+
+                                process->deleteLater();
+
+                                (*finishedCount)++;
+
+                                if (*finishedCount >= total) {
+                                    (*startNextGroup)();
+                                }
+                            });
+
+                    // стартуем yt-dlp
+                    process->setWorkingDirectory(ytdlpDir);
+                    process->start(ytdlpExe, arguments);
+                }
+        });
+        process->setWorkingDirectory(backendDir);
+        process->start(backendExe, args);
+    };
+
+    (*startNextGroup)();
 }
 
 void MainWindow::on_listWidgetProcess_itemClicked(QListWidgetItem *item)
@@ -743,3 +1067,23 @@ void MainWindow::on_lineEditPass_textChanged(const QString &text)
     proxyPass = text;
     settings.setValue("proxy/pass", text);
 }
+
+void MainWindow::on_logProcessButton_clicked()
+{
+    logWindow->show();
+}
+
+void MainWindow::on_pushButtonBrowse_clicked()
+{
+    QString dir = QFileDialog::getExistingDirectory(
+        this,
+        "Выберите папку",
+        QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)
+        );
+
+    if (!dir.isEmpty()) {
+        ui->lineEditSavePath->setText(dir);
+        settings.setValue("download/path", dir);
+    }
+}
+
