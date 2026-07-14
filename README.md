@@ -19,7 +19,7 @@
 
 ### Скачать релиз под вашу систему
 
-[Послдений релиз animedl v1.1.0](https://github.com/Ifanfomin/anigui-dl-ru/releases/tag/v1.1.0)
+[Послдений релиз animedl v1.1.1](https://github.com/Ifanfomin/anigui-dl-ru/releases/tag/v1.1.1)
 
 ### Либо собрать самим
 
