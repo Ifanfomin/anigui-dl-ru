@@ -66,8 +66,15 @@ jobs:
           cmake --build build --config Release
 
       - name: Deploy Qt
+        shell: pwsh
         run: |
-          Qt/6.10.3/mingw_64/bin/windeployqt.exe build/animedl.exe
+          & "$PWD/Qt/6.10.3/mingw_64/bin/windeployqt.exe" `
+            --release `
+            --compiler-runtime `
+            --no-translations `
+            --no-system-d3d-compiler `
+            --no-opengl-sw `
+            build/animedl.exe
 
       - uses: actions/upload-artifact@v4
         with:
