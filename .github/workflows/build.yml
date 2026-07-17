@@ -7,53 +7,20 @@ on:
       - main
 
 jobs:
-  build:
+  list:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
+      - name: Install aqtinstall
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aqtinstall
+
       - name: List Qt versions
         run: |
           python -m aqt list-qt windows desktop
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "6.11.1"
-          host: windows
-          target: desktop
-          arch: win64_mingw
-
-      - name: Install MinGW 13.1
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          version: 13.1.0
-
-      - name: Configure CMake
-        run: |
-          cmake -S . -B build -G "MinGW Makefiles"
-
-      - name: Build
-        run: |
-          cmake --build build --config Release
-
-      - name: Deploy Qt
-        run: |
-          windeployqt build/animedl.exe
-
-      - name: Upload build
-        uses: actions/upload-artifact@v4
-        with:
-          name: AnimeDL
-          path: |
-            build/animedl.exe
-            build/backend/**
-            build/yt-dlp.exe
-            build/version.txt
