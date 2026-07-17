@@ -33,7 +33,14 @@ jobs:
         run: |
           "$PWD/Qt/Tools/mingw1310_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           "$PWD/Qt/6.10.3/mingw_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
+      
+      - name: Inspect Qt installation
+        shell: pwsh
+        run: |
+          Get-ChildItem Qt
+          Get-ChildItem Qt/Tools
+          Get-ChildItem Qt/Tools/* | Select-Object FullName
+      
       - name: Clean build
         run: |
           Remove-Item build -Recurse -Force -ErrorAction Ignore
