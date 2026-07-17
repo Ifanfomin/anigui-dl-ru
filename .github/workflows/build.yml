@@ -69,12 +69,7 @@ jobs:
         run: |
           Qt/6.10.3/mingw_64/bin/windeployqt.exe build/animedl.exe
 
-      - name: Upload build
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: AnimeDL
-          path: |
-            build/animedl.exe
-            build/backend/**
-            build/yt-dlp.exe
-            build/version.txt
+          name: animedl
+          path: build/**
