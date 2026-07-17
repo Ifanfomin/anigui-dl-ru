@@ -2,22 +2,58 @@ name: Build AnimeDL
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
 
 jobs:
-  list:
+  build:
     runs-on: windows-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      - name: Install aqtinstall
+      - name: Install aqt
         run: |
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      - name: Install Qt
+      - name: Install Qt 6.10.3
         run: |
           python -m aqt install-qt windows desktop 6.10.3 win64_mingw --outputdir Qt
+
+      - name: Add Qt to PATH
+        shell: pwsh
+        run: |
+          "$PWD/Qt/Tools/mingw1310_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "$PWD/Qt/6.10.3/mingw_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -G "MinGW Makefiles"
+          -DCMAKE_PREFIX_PATH="$PWD/Qt/6.10.3/mingw_64"
+
+      - name: Build
+        run: |
+          cmake --build build --config Release
+
+      - name: Deploy Qt
+        run: |
+          Qt/6.10.3/mingw_64/bin/windeployqt.exe build/animedl.exe
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeDL
+          path: |
+            build/animedl.exe
+            build/backend/**
+            build/yt-dlp.exe
+            build/version.txt
