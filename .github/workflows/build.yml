@@ -20,4 +20,4 @@ jobs:
 
       - name: Install Qt
         run: |
-          python -m aqt install-qt windows desktop 6.11.1 win64_mingw --outputdir Qt
+          python -m aqt install-qt windows desktop 6.10.3 win64_mingw --outputdir Qt
