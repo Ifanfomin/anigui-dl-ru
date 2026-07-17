@@ -52,7 +52,13 @@ jobs:
       - name: Install MinGW 13.1
         run: |
           python -m aqt install-tool windows desktop tools_mingw1310 --outputdir Qt
-          
+
+      - name: Verify MinGW
+        shell: pwsh
+        run: |
+          Get-ChildItem Qt/Tools
+          Get-ChildItem Qt/Tools/mingw1310_64/bin | Select-Object Name
+
       - name: Configure CMake
         shell: pwsh
         run: |
