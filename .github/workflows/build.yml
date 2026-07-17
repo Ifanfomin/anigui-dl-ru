@@ -2,9 +2,6 @@ name: Build AnimeDL
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   list:
