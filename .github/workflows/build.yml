@@ -34,11 +34,18 @@ jobs:
           "$PWD/Qt/Tools/mingw1310_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           "$PWD/Qt/6.10.3/mingw_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+      - name: Clean build
+        run: |
+          Remove-Item build -Recurse -Force -ErrorAction Ignore
+          
       - name: Configure CMake
-        run: >
-          cmake -S . -B build
-          -G "MinGW Makefiles"
-          -DCMAKE_PREFIX_PATH="$PWD/Qt/6.10.3/mingw_64"
+        shell: pwsh
+        run: |
+          cmake -S . -B build `
+            -G "MinGW Makefiles" `
+            -DCMAKE_PREFIX_PATH="$PWD/Qt/6.10.3/mingw_64" `
+            -DCMAKE_C_COMPILER="$PWD/Qt/Tools/mingw1310_64/bin/gcc.exe" `
+            -DCMAKE_CXX_COMPILER="$PWD/Qt/Tools/mingw1310_64/bin/g++.exe"
 
       - name: Build
         run: |
