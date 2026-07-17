@@ -37,13 +37,6 @@ jobs:
       - name: List available tools
         run: |
           python -m aqt list-tool windows desktop
-
-      - name: Inspect Qt installation
-        shell: pwsh
-        run: |
-          Get-ChildItem Qt
-          Get-ChildItem Qt/Tools
-          Get-ChildItem Qt/Tools/* | Select-Object FullName
       
       - name: Clean build
         run: |
