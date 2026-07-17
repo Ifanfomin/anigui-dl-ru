@@ -1,6 +1,5 @@
 from pathlib import Path
 import subprocess
-import shutil
 import venv
 import platform
 
@@ -22,13 +21,24 @@ def run(cmd):
     subprocess.check_call(cmd)
 
 
-def recreate_venv():
-    if VENV_DIR.exists():
-        print("Removing existing virtual environment...")
-        shutil.rmtree(VENV_DIR)
+def ensure_venv():
+    if not VENV_DIR.exists():
+        print("Creating virtual environment...")
+        venv.create(VENV_DIR, with_pip=True)
+    else:
+        print("Virtual environment already exists.")
 
-    print("Creating virtual environment...")
-    venv.create(VENV_DIR, with_pip=True)
+
+def upgrade_pip():
+    print("Upgrading pip...")
+    run([
+        str(PYTHON),
+        "-m",
+        "pip",
+        "install",
+        "--upgrade",
+        "pip"
+    ])
 
 
 def install_requirements():
@@ -41,7 +51,8 @@ def install_requirements():
     ])
 
 
-recreate_venv()
+ensure_venv()
+upgrade_pip()
 install_requirements()
 
 print("Backend environment ready.")

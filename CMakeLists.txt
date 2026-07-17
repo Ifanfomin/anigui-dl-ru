@@ -124,16 +124,16 @@ add_custom_target(build_python_backend
 set(VENV_PATH "${CMAKE_SOURCE_DIR}/backend/.venv")
 set(BACKEND_DIST_PATH "${CMAKE_SOURCE_DIR}/backend/dist/backend")
 
-# Если .venv отсутствует, то сначала bootstrap
-if(NOT EXISTS "${VENV_PATH}")
-    add_dependencies(build_python_backend bootstrap_backend)
-endif()
+add_custom_target(python_backend
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/backend/bootstrap_backend.py
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/backend/build_backend.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/backend
+    COMMENT "Preparing Python backend"
+)
 
-# Если backend ещё не собран, то собираем
-if(NOT EXISTS "${BACKEND_DIST_PATH}")
-    add_dependencies(animedl build_python_backend)
-endif()
-
+add_dependencies(animedl python_backend)
 
 add_custom_command(TARGET animedl POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -rf
@@ -148,6 +148,15 @@ add_custom_command(TARGET animedl POST_BUILD
         ${CMAKE_SOURCE_DIR}/backend/${YTDLP_BIN}
         $<TARGET_FILE_DIR:animedl>/${YTDLP_BIN}
 )
+
+add_custom_target(copy_version ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.txt
+        $<TARGET_FILE_DIR:animedl>/version.txt
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/version.txt
+)
+
+add_dependencies(animedl copy_version)
 
 if (WIN32)
     target_sources(animedl PRIVATE icon.rc)

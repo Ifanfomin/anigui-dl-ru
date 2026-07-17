@@ -23,6 +23,17 @@ MainWindow::MainWindow(QWidget *parent)
     ytdlpExe = ytdlpDir + "/yt-dlp";
 #endif
 
+    QString fileName = QCoreApplication::applicationDirPath() + "/version.txt";
+    QFile file(fileName);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        QString version = "Версия: " + in.readAll().trimmed();
+        ui->label_version->setText(version);
+        file.close();
+    } else {
+        ui->label_version->setText("Версия: ?.?.?");
+    }
+
     ui->label_github->setOpenExternalLinks(true);
     ui->label_tg->setOpenExternalLinks(true);
 
