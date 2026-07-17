@@ -18,6 +18,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      - name: List architectures
+      - name: Install Qt
         run: |
-          python -m aqt list-qt windows desktop 6.11.1 --arch
+          python -m aqt install-qt windows desktop 6.11.1 win64_mingw --outputdir Qt
