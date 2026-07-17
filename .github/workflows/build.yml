@@ -20,4 +20,4 @@ jobs:
 
       - name: List architectures
         run: |
-          python -m aqt list-qt windows desktop --arch 6.11.1
+          python -m aqt list-qt windows desktop 6.11.1 --arch
