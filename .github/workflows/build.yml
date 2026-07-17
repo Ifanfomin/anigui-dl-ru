@@ -19,6 +19,10 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: List Qt versions
+        run: |
+          python -m aqt list-qt windows desktop
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
