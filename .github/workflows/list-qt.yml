@@ -1,0 +1,23 @@
+name: List Qt Versions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list:
+    runs-on: windows-latest
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install aqtinstall
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aqtinstall
+
+      - name: List Qt versions
+        run: |
+          python -m aqt list-qt windows desktop
