@@ -76,6 +76,26 @@ jobs:
             --no-opengl-sw `
             build/animedl.exe
 
+      - name: Cleanup distribution
+        shell: pwsh
+        run: |
+          # CMake artifacts
+          Remove-Item build/animedl_autogen -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item build/CMakeFiles -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item build/CMakeCache.txt -Force -ErrorAction SilentlyContinue
+          Remove-Item build/cmake_install.cmake -Force -ErrorAction SilentlyContinue
+          Remove-Item build/Makefile -Force -ErrorAction SilentlyContinue
+
+          # Unused Qt components
+          Remove-Item build/generic -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item build/networkinformation -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item build/tls -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item build/iconengines -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item build/imageformats -Recurse -Force -ErrorAction SilentlyContinue
+
+          Remove-Item build/Qt6Network.dll -Force -ErrorAction SilentlyContinue
+          Remove-Item build/Qt6Svg.dll -Force -ErrorAction SilentlyContinue
+
       - uses: actions/upload-artifact@v4
         with:
           name: animedl
