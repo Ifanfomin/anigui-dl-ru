@@ -96,7 +96,45 @@ jobs:
           Remove-Item build/Qt6Network.dll -Force -ErrorAction SilentlyContinue
           Remove-Item build/Qt6Svg.dll -Force -ErrorAction SilentlyContinue
 
+      - name: Install 7-Zip
+        shell: pwsh
+        run: |
+          choco install 7zip -y --no-progress
+
+      - name: Create SFX configuration
+        shell: pwsh
+        run: |
+          @"
+          ;!@Install@!UTF-8!
+          RunProgram="animedl.exe"
+          ;!@InstallEnd@!
+          "@ | Set-Content -Path sfx-config.txt -Encoding UTF8
+
+      - name: Create archive
+        shell: pwsh
+        run: |
+          & "C:\Program Files\7-Zip\7z.exe" a `
+            -t7z `
+            -mx=9 `
+            animedl.7z `
+            ".\build\*"
+
+      - name: Create single EXE
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+
+          $sfx = "C:\Program Files\7-Zip\7z.sfx"
+
+          cmd /c "copy /b `"$sfx`" + sfx-config.txt + animedl.7z dist\animedl.exe"
+
+      - name: Verify final EXE
+        shell: pwsh
+        run: |
+          Write-Host "Final AnimeDL:"
+          Get-Item dist/animedl.exe | Select-Object Name, Length
+
       - uses: actions/upload-artifact@v4
         with:
           name: animedl
-          path: build/**
+          path: dist/animedl.exe
