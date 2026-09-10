@@ -282,7 +282,14 @@ jobs:
 
         - name: Rename AppImage
           run: |
-            mv AnimeDL*.AppImage AnimeDL-x86_64.AppImage
+            APPIMAGE=$(find . -maxdepth 1 -type f -name '*.AppImage' -print -quit)
+
+            if [ -z "$APPIMAGE" ]; then
+              echo "ERROR: No AppImage was generated"
+              exit 1
+            fi
+
+            mv "$APPIMAGE" AnimeDL-x86_64.AppImage
 
         # --------------------------------------------------------
         # Verify
