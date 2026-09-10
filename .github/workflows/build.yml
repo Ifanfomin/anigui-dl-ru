@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
     steps:
@@ -100,3 +100,186 @@ jobs:
         with:
           name: animedl
           path: build/**
+
+  build-linux:
+      runs-on: ubuntu-22.04
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        # --------------------------------------------------------
+        # System dependencies
+        # --------------------------------------------------------
+
+        - name: Install dependencies
+          run: |
+            sudo apt-get update
+
+            sudo apt-get install -y \
+              build-essential \
+              cmake \
+              ninja-build \
+              wget \
+              file \
+              libgl1-mesa-dev \
+              libxkbcommon-dev \
+              libxcb-cursor0
+
+        # --------------------------------------------------------
+        # Qt
+        # --------------------------------------------------------
+
+        - name: Setup Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.13"
+
+        - name: Install aqt
+          run: |
+            python -m pip install --upgrade pip
+            python -m pip install aqtinstall
+
+        - name: Install Qt 6.10.3
+          run: |
+            python -m aqt install-qt \
+              linux \
+              desktop \
+              6.10.3 \
+              linux_gcc_64 \
+              --outputdir Qt
+
+        - name: Add Qt to PATH
+          run: |
+            echo "$GITHUB_WORKSPACE/Qt/6.10.3/gcc_64/bin" >> "$GITHUB_PATH"
+
+        - name: Verify Qt
+          run: |
+            qmake --version
+            cmake --version
+            gcc --version
+
+        # --------------------------------------------------------
+        # Build
+        # --------------------------------------------------------
+
+        - name: Configure CMake
+          run: |
+            cmake \
+              -S . \
+              -B build \
+              -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/Qt/6.10.3/gcc_64"
+
+        - name: Build
+          run: |
+            cmake --build build --config Release
+
+        - name: Verify Linux binary
+          run: |
+            file build/animedl
+            ldd build/animedl || true
+
+        # --------------------------------------------------------
+        # AppDir
+        # --------------------------------------------------------
+
+        - name: Create AppDir
+          run: |
+            rm -rf AppDir
+
+            mkdir -p AppDir/usr/bin
+            mkdir -p AppDir/usr/share/applications
+
+            cp build/animedl AppDir/usr/bin/animedl
+
+        # --------------------------------------------------------
+        # Desktop file
+        # --------------------------------------------------------
+
+        - name: Create desktop file
+          run: |
+            cat > AppDir/usr/share/applications/animedl.desktop << 'EOF'
+            [Desktop Entry]
+            Type=Application
+            Name=AnimeDL
+            Comment=AnimeDL
+            Exec=animedl
+            Icon=animedl
+            Categories=AudioVideo;
+            Terminal=false
+            EOF
+
+        # --------------------------------------------------------
+        # Download linuxdeploy
+        # --------------------------------------------------------
+
+        - name: Download linuxdeploy
+          run: |
+            wget -q \
+              https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
+              -O linuxdeploy.AppImage
+
+            chmod +x linuxdeploy.AppImage
+
+        # --------------------------------------------------------
+        # Download Qt plugin
+        # --------------------------------------------------------
+
+        - name: Download linuxdeploy Qt plugin
+          run: |
+            wget -q \
+              https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage \
+              -O linuxdeploy-plugin-qt.AppImage
+
+            chmod +x linuxdeploy-plugin-qt.AppImage
+
+        # --------------------------------------------------------
+        # Deploy dependencies
+        # --------------------------------------------------------
+
+        - name: Deploy application
+          env:
+            QMAKE: ${{ github.workspace }}/Qt/6.10.3/gcc_64/bin/qmake
+          run: |
+            ./linuxdeploy.AppImage \
+              --appdir AppDir \
+              --plugin qt
+
+        # --------------------------------------------------------
+        # Build AppImage
+        # --------------------------------------------------------
+
+        - name: Build AppImage
+          run: |
+            ./linuxdeploy.AppImage \
+              --appdir AppDir \
+              --output appimage
+
+        # --------------------------------------------------------
+        # Rename
+        # --------------------------------------------------------
+
+        - name: Rename AppImage
+          run: |
+            mv AnimeDL*.AppImage AnimeDL-x86_64.AppImage
+
+        # --------------------------------------------------------
+        # Verify
+        # --------------------------------------------------------
+
+        - name: Verify AppImage
+          run: |
+            file AnimeDL-x86_64.AppImage
+            ls -lh AnimeDL-x86_64.AppImage
+
+        # --------------------------------------------------------
+        # Upload
+        # --------------------------------------------------------
+
+        - name: Upload Linux artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: animedl-linux
+            path: AnimeDL-x86_64.AppImage
