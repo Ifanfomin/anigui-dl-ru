@@ -101,314 +101,314 @@ jobs:
           name: animedl
           path: build/**
 
-build-linux:
-  runs-on: ubuntu-22.04
+  build-linux:
+    runs-on: ubuntu-22.04
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # --------------------------------------------------------
-    # System dependencies
-    # --------------------------------------------------------
+      # --------------------------------------------------------
+      # System dependencies
+      # --------------------------------------------------------
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
 
-        sudo apt-get install -y \
-          build-essential \
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            wget \
+            file \
+            patchelf \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-0 \
+            libxkbcommon-x11-dev \
+            libxcb-cursor0 \
+            libxcb-xinerama0 \
+            libxcb1 \
+            libxcb1-dev \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-render-util0 \
+            libxcb-shape0 \
+            libxcb-shm0 \
+            libxcb-util1 \
+            libxcb-xkb1
+
+      # --------------------------------------------------------
+      # Python
+      # --------------------------------------------------------
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install aqt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aqtinstall
+
+      # --------------------------------------------------------
+      # Qt
+      # --------------------------------------------------------
+
+      - name: Install Qt 6.10.3
+        run: |
+          python -m aqt install-qt \
+            linux \
+            desktop \
+            6.10.3 \
+            linux_gcc_64 \
+            --outputdir Qt
+
+      - name: Add Qt to PATH
+        run: |
+          echo "$GITHUB_WORKSPACE/Qt/6.10.3/gcc_64/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Qt
+        run: |
+          qmake --version
+          cmake --version
+          gcc --version
+
+      # --------------------------------------------------------
+      # Build
+      # --------------------------------------------------------
+
+      - name: Configure CMake
+        run: |
           cmake \
-          ninja-build \
-          wget \
-          file \
-          patchelf \
-          libgl1-mesa-dev \
-          libxkbcommon-dev \
-          libxkbcommon-x11-0 \
-          libxkbcommon-x11-dev \
-          libxcb-cursor0 \
-          libxcb-xinerama0 \
-          libxcb1 \
-          libxcb1-dev \
-          libxcb-icccm4 \
-          libxcb-image0 \
-          libxcb-keysyms1 \
-          libxcb-render-util0 \
-          libxcb-shape0 \
-          libxcb-shm0 \
-          libxcb-util1 \
-          libxcb-xkb1
+            -S . \
+            -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/Qt/6.10.3/gcc_64"
 
-    # --------------------------------------------------------
-    # Python
-    # --------------------------------------------------------
+      - name: Build
+        run: |
+          cmake --build build --config Release
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13"
+      # --------------------------------------------------------
+      # Verify build output
+      # --------------------------------------------------------
 
-    - name: Install aqt
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install aqtinstall
+      - name: Verify Linux build
+        run: |
+          set -e
 
-    # --------------------------------------------------------
-    # Qt
-    # --------------------------------------------------------
+          echo "=== Main binary ==="
+          file build/animedl
+          ls -lh build/animedl
 
-    - name: Install Qt 6.10.3
-      run: |
-        python -m aqt install-qt \
-          linux \
-          desktop \
-          6.10.3 \
-          linux_gcc_64 \
-          --outputdir Qt
+          echo
+          echo "=== Backend ==="
+          if [ ! -d "build/backend" ]; then
+            echo "ERROR: build/backend does not exist"
+            exit 1
+          fi
+          find build/backend -maxdepth 2 -type f -print
 
-    - name: Add Qt to PATH
-      run: |
-        echo "$GITHUB_WORKSPACE/Qt/6.10.3/gcc_64/bin" >> "$GITHUB_PATH"
+          echo
+          echo "=== yt-dlp ==="
+          if [ ! -f "build/yt-dlp" ]; then
+            echo "ERROR: build/yt-dlp does not exist"
+            exit 1
+          fi
+          file build/yt-dlp
+          ls -lh build/yt-dlp
 
-    - name: Verify Qt
-      run: |
-        qmake --version
-        cmake --version
-        gcc --version
+      # --------------------------------------------------------
+      # AppDir
+      # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # Build
-    # --------------------------------------------------------
+      - name: Create AppDir
+        run: |
+          set -e
 
-    - name: Configure CMake
-      run: |
-        cmake \
-          -S . \
-          -B build \
-          -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/Qt/6.10.3/gcc_64"
+          rm -rf AppDir
 
-    - name: Build
-      run: |
-        cmake --build build --config Release
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
-    # --------------------------------------------------------
-    # Verify build output
-    # --------------------------------------------------------
+          # Main application
+          cp build/animedl \
+            AppDir/usr/bin/animedl
 
-    - name: Verify Linux build
-      run: |
-        set -e
+          # Backend
+          cp -r build/backend \
+            AppDir/usr/bin/backend
 
-        echo "=== Main binary ==="
-        file build/animedl
-        ls -lh build/animedl
+          # yt-dlp
+          cp build/yt-dlp \
+            AppDir/usr/bin/yt-dlp
 
-        echo
-        echo "=== Backend ==="
-        if [ ! -d "build/backend" ]; then
-          echo "ERROR: build/backend does not exist"
-          exit 1
-        fi
-        find build/backend -maxdepth 2 -type f -print
+          # Icon
+          cp icons/icon.png \
+            AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png
 
-        echo
-        echo "=== yt-dlp ==="
-        if [ ! -f "build/yt-dlp" ]; then
-          echo "ERROR: build/yt-dlp does not exist"
-          exit 1
-        fi
-        file build/yt-dlp
-        ls -lh build/yt-dlp
+          chmod +x AppDir/usr/bin/animedl
+          chmod +x AppDir/usr/bin/yt-dlp
 
-    # --------------------------------------------------------
-    # AppDir
-    # --------------------------------------------------------
+          find AppDir/usr/bin/backend -type f -exec chmod +x {} \; || true
 
-    - name: Create AppDir
-      run: |
-        set -e
+      # --------------------------------------------------------
+      # Desktop file
+      # --------------------------------------------------------
 
-        rm -rf AppDir
+      - name: Create desktop file
+        run: |
+          cat > AppDir/usr/share/applications/animedl.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=Anime Downloader
+          Comment=AnimeDL
+          Exec=animedl
+          Icon=animedl
+          Categories=AudioVideo;
+          Terminal=false
+          EOF
 
-        mkdir -p AppDir/usr/bin
-        mkdir -p AppDir/usr/share/applications
-        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+      # --------------------------------------------------------
+      # AppRun
+      # --------------------------------------------------------
 
-        # Main application
-        cp build/animedl \
-          AppDir/usr/bin/animedl
+      - name: Create AppRun
+        run: |
+          cat > AppDir/AppRun << 'EOF'
+          #!/bin/sh
 
-        # Backend
-        cp -r build/backend \
-          AppDir/usr/bin/backend
+          HERE="$(dirname "$(readlink -f "$0")")"
 
-        # yt-dlp
-        cp build/yt-dlp \
-          AppDir/usr/bin/yt-dlp
+          export QT_PLUGIN_PATH="$HERE/usr/plugins"
+          export QML2_IMPORT_PATH="$HERE/usr/qml"
 
-        # Icon
-        cp icons/icon.png \
-          AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png
+          exec "$HERE/usr/bin/animedl" "$@"
+          EOF
 
-        chmod +x AppDir/usr/bin/animedl
-        chmod +x AppDir/usr/bin/yt-dlp
+          chmod +x AppDir/AppRun
 
-        find AppDir/usr/bin/backend -type f -exec chmod +x {} \; || true
+      # --------------------------------------------------------
+      # Verify AppDir before deployment
+      # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # Desktop file
-    # --------------------------------------------------------
+      - name: Verify AppDir
+        run: |
+          set -e
 
-    - name: Create desktop file
-      run: |
-        cat > AppDir/usr/share/applications/animedl.desktop << 'EOF'
-        [Desktop Entry]
-        Type=Application
-        Name=Anime Downloader
-        Comment=AnimeDL
-        Exec=animedl
-        Icon=animedl
-        Categories=AudioVideo;
-        Terminal=false
-        EOF
+          echo "=== AppDir ==="
+          find AppDir -maxdepth 5 -type f -o -type l | sort
 
-    # --------------------------------------------------------
-    # AppRun
-    # --------------------------------------------------------
+          echo
+          echo "=== Main binary ==="
+          file AppDir/usr/bin/animedl
 
-    - name: Create AppRun
-      run: |
-        cat > AppDir/AppRun << 'EOF'
-        #!/bin/sh
+          echo
+          echo "=== yt-dlp ==="
+          file AppDir/usr/bin/yt-dlp
 
-        HERE="$(dirname "$(readlink -f "$0")")"
+          echo
+          echo "=== Icon ==="
+          file AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png
 
-        export QT_PLUGIN_PATH="$HERE/usr/plugins"
-        export QML2_IMPORT_PATH="$HERE/usr/qml"
+          echo
+          echo "=== Desktop ==="
+          cat AppDir/usr/share/applications/animedl.desktop
 
-        exec "$HERE/usr/bin/animedl" "$@"
-        EOF
+          echo
+          echo "=== AppRun ==="
+          cat AppDir/AppRun
 
-        chmod +x AppDir/AppRun
+      # --------------------------------------------------------
+      # linuxdeploy
+      # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # Verify AppDir before deployment
-    # --------------------------------------------------------
+      - name: Download linuxdeploy
+        run: |
+          wget -q \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
+            -O linuxdeploy.AppImage
 
-    - name: Verify AppDir
-      run: |
-        set -e
+          chmod +x linuxdeploy.AppImage
 
-        echo "=== AppDir ==="
-        find AppDir -maxdepth 5 -type f -o -type l | sort
+      # --------------------------------------------------------
+      # Qt plugin
+      # --------------------------------------------------------
 
-        echo
-        echo "=== Main binary ==="
-        file AppDir/usr/bin/animedl
+      - name: Download linuxdeploy Qt plugin
+        run: |
+          wget -q \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage \
+            -O linuxdeploy-plugin-qt.AppImage
 
-        echo
-        echo "=== yt-dlp ==="
-        file AppDir/usr/bin/yt-dlp
+          chmod +x linuxdeploy-plugin-qt.AppImage
 
-        echo
-        echo "=== Icon ==="
-        file AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png
+      # --------------------------------------------------------
+      # Deploy Qt + dependencies + build AppImage
+      # --------------------------------------------------------
 
-        echo
-        echo "=== Desktop ==="
-        cat AppDir/usr/share/applications/animedl.desktop
+      - name: Build AppImage
+        env:
+          QMAKE: ${{ github.workspace }}/Qt/6.10.3/gcc_64/bin/qmake
+          NO_STRIP: "1"
+        run: |
+          ./linuxdeploy.AppImage \
+            --appdir AppDir \
+            --executable AppDir/usr/bin/animedl \
+            --desktop-file AppDir/usr/share/applications/animedl.desktop \
+            --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png \
+            --plugin qt \
+            --output appimage
 
-        echo
-        echo "=== AppRun ==="
-        cat AppDir/AppRun
+      # --------------------------------------------------------
+      # Rename
+      # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # linuxdeploy
-    # --------------------------------------------------------
+      - name: Rename AppImage
+        run: |
+          set -e
 
-    - name: Download linuxdeploy
-      run: |
-        wget -q \
-          https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
-          -O linuxdeploy.AppImage
+          APPIMAGE=$(find . -maxdepth 1 -type f -name '*.AppImage' \
+            ! -name 'linuxdeploy.AppImage' \
+            ! -name 'linuxdeploy-plugin-qt.AppImage' \
+            -print -quit)
 
-        chmod +x linuxdeploy.AppImage
+          if [ -z "$APPIMAGE" ]; then
+            echo "ERROR: No AppImage was generated"
+            exit 1
+          fi
 
-    # --------------------------------------------------------
-    # Qt plugin
-    # --------------------------------------------------------
+          echo "Generated: $APPIMAGE"
 
-    - name: Download linuxdeploy Qt plugin
-      run: |
-        wget -q \
-          https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage \
-          -O linuxdeploy-plugin-qt.AppImage
+          mv "$APPIMAGE" AnimeDL-x86_64.AppImage
 
-        chmod +x linuxdeploy-plugin-qt.AppImage
+      # --------------------------------------------------------
+      # Verify final AppImage
+      # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # Deploy Qt + dependencies + build AppImage
-    # --------------------------------------------------------
+      - name: Verify AppImage
+        run: |
+          set -e
 
-    - name: Build AppImage
-      env:
-        QMAKE: ${{ github.workspace }}/Qt/6.10.3/gcc_64/bin/qmake
-        NO_STRIP: "1"
-      run: |
-        ./linuxdeploy.AppImage \
-          --appdir AppDir \
-          --executable AppDir/usr/bin/animedl \
-          --desktop-file AppDir/usr/share/applications/animedl.desktop \
-          --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png \
-          --plugin qt \
-          --output appimage
+          file AnimeDL-x86_64.AppImage
+          ls -lh AnimeDL-x86_64.AppImage
 
-    # --------------------------------------------------------
-    # Rename
-    # --------------------------------------------------------
+          echo
+          echo "=== AppImage permissions ==="
+          stat -c '%A %n' AnimeDL-x86_64.AppImage
 
-    - name: Rename AppImage
-      run: |
-        set -e
+      # --------------------------------------------------------
+      # Upload
+      # --------------------------------------------------------
 
-        APPIMAGE=$(find . -maxdepth 1 -type f -name '*.AppImage' \
-          ! -name 'linuxdeploy.AppImage' \
-          ! -name 'linuxdeploy-plugin-qt.AppImage' \
-          -print -quit)
-
-        if [ -z "$APPIMAGE" ]; then
-          echo "ERROR: No AppImage was generated"
-          exit 1
-        fi
-
-        echo "Generated: $APPIMAGE"
-
-        mv "$APPIMAGE" AnimeDL-x86_64.AppImage
-
-    # --------------------------------------------------------
-    # Verify final AppImage
-    # --------------------------------------------------------
-
-    - name: Verify AppImage
-      run: |
-        set -e
-
-        file AnimeDL-x86_64.AppImage
-        ls -lh AnimeDL-x86_64.AppImage
-
-        echo
-        echo "=== AppImage permissions ==="
-        stat -c '%A %n' AnimeDL-x86_64.AppImage
-
-    # --------------------------------------------------------
-    # Upload
-    # --------------------------------------------------------
-
-    - name: Upload Linux artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: animedl-linux
-        path: AnimeDL-x86_64.AppImage
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: animedl-linux
+          path: AnimeDL-x86_64.AppImage
