@@ -205,8 +205,13 @@ jobs:
 
             mkdir -p AppDir/usr/bin
             mkdir -p AppDir/usr/share/applications
+            mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
-            cp build/animedl AppDir/usr/bin/animedl
+            cp build/animedl \
+              AppDir/usr/bin/animedl
+
+            cp icons/icon.png \
+              AppDir/usr/share/icons/hicolor/256x256/apps/animedl.png
 
         # --------------------------------------------------------
         # Desktop file
@@ -217,7 +222,7 @@ jobs:
             cat > AppDir/usr/share/applications/animedl.desktop << 'EOF'
             [Desktop Entry]
             Type=Application
-            Name=AnimeDL
+            Name=Anime Downloader
             Comment=AnimeDL
             Exec=animedl
             Icon=animedl
