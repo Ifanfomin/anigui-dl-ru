@@ -96,69 +96,7 @@ jobs:
           Remove-Item build/Qt6Network.dll -Force -ErrorAction SilentlyContinue
           Remove-Item build/Qt6Svg.dll -Force -ErrorAction SilentlyContinue
 
-      # ==========================================
-      # CREATE SINGLE-FILE PORTABLE EXE
-      # ==========================================
-
-      - name: Install NSIS
-        shell: pwsh
-        run: |
-          choco install nsis -y --no-progress
-
-      - name: Create NSIS script
-        shell: pwsh
-        run: |
-          @"
-          Unicode true
-
-          RequestExecutionLevel user
-
-          OutFile "dist\animedl.exe"
-
-          ; Temporary directory
-          InstallDir "\`$TEMP\AnimeDL_\`$PID"
-
-          ; No installer UI
-          SilentInstall silent
-          SilentUninstall silent
-
-          ; Do not create shortcuts or registry entries
-          AutoCloseWindow true
-          ShowInstDetails nevershow
-          ShowUninstDetails nevershow
-
-          Section
-              SetOutPath "\`$INSTDIR"
-
-              ; Extract entire build directory
-              File /r "build\*"
-
-              ; Launch AnimeDL and wait until it exits
-              ExecWait '"\`$INSTDIR\animedl.exe"'
-
-              ; Return to parent directory
-              SetOutPath "\`$TEMP"
-
-              ; Remove extracted files
-              RMDir /r "\`$INSTDIR"
-          SectionEnd
-          "@ | Set-Content -Path animedl.nsi -Encoding UTF8
-
-      - name: Build single EXE
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-
-          & "C:\Program Files (x86)\NSIS\makensis.exe" /V2 animedl.nsi
-
-      - name: Verify final EXE
-        shell: pwsh
-        run: |
-          Write-Host "Final AnimeDL:"
-          Get-Item dist/animedl.exe | Select-Object Name, Length
-
-      - name: Upload single EXE
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: animedl
-          path: dist/animedl.exe
+          path: build/**
