@@ -96,37 +96,60 @@ jobs:
           Remove-Item build/Qt6Network.dll -Force -ErrorAction SilentlyContinue
           Remove-Item build/Qt6Svg.dll -Force -ErrorAction SilentlyContinue
 
-      - name: Install 7-Zip
+      # ==========================================
+      # CREATE SINGLE-FILE PORTABLE EXE
+      # ==========================================
+
+      - name: Install NSIS
         shell: pwsh
         run: |
-          choco install 7zip -y --no-progress
+          choco install nsis -y --no-progress
 
-      - name: Create SFX configuration
+      - name: Create NSIS script
         shell: pwsh
         run: |
           @"
-          ;!@Install@!UTF-8!
-          RunProgram="animedl.exe"
-          ;!@InstallEnd@!
-          "@ | Set-Content -Path sfx-config.txt -Encoding UTF8
+          Unicode true
 
-      - name: Create archive
-        shell: pwsh
-        run: |
-          & "C:\Program Files\7-Zip\7z.exe" a `
-            -t7z `
-            -mx=9 `
-            animedl.7z `
-            ".\build\*"
+          RequestExecutionLevel user
 
-      - name: Create single EXE
+          OutFile "dist\animedl.exe"
+
+          ; Temporary directory
+          InstallDir "\`$TEMP\AnimeDL_\`$PID"
+
+          ; No installer UI
+          SilentInstall silent
+          SilentUninstall silent
+
+          ; Do not create shortcuts or registry entries
+          AutoCloseWindow true
+          ShowInstDetails nevershow
+          ShowUninstDetails nevershow
+
+          Section
+              SetOutPath "\`$INSTDIR"
+
+              ; Extract entire build directory
+              File /r "build\*"
+
+              ; Launch AnimeDL and wait until it exits
+              ExecWait '"\`$INSTDIR\animedl.exe"'
+
+              ; Return to parent directory
+              SetOutPath "\`$TEMP"
+
+              ; Remove extracted files
+              RMDir /r "\`$INSTDIR"
+          SectionEnd
+          "@ | Set-Content -Path animedl.nsi -Encoding UTF8
+
+      - name: Build single EXE
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
 
-          $sfx = "C:\Program Files\7-Zip\7z.sfx"
-
-          cmd /c "copy /b `"$sfx`" + sfx-config.txt + animedl.7z dist\animedl.exe"
+          & "C:\Program Files (x86)\NSIS\makensis.exe" /V2 animedl.nsi
 
       - name: Verify final EXE
         shell: pwsh
@@ -134,7 +157,8 @@ jobs:
           Write-Host "Final AnimeDL:"
           Get-Item dist/animedl.exe | Select-Object Name, Length
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload single EXE
+        uses: actions/upload-artifact@v4
         with:
           name: animedl
           path: dist/animedl.exe
