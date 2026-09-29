@@ -129,27 +129,17 @@
     </item>
     <item>
      <property name="text">
+      <string>yummy_anime</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
       <string>anilibria</string>
      </property>
     </item>
     <item>
      <property name="text">
       <string>animevost</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>yummy_anime_org</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>yummy_anime</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>dreamcast</string>
      </property>
     </item>
     <item>
