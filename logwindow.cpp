@@ -27,6 +27,8 @@ void LogWindow::createProcessTab(QProcess *process, const QString &title)
     log->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     log->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
+    log->document()->setMaximumBlockCount(30);
+
     ui->tabWidget->addTab(log, title);
     processLogs[process] = log;
 }
@@ -45,4 +47,3 @@ void LogWindow::on_pushButtonClose_clicked()
 {
     close();
 }
-
