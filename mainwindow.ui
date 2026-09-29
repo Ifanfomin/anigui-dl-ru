@@ -129,27 +129,17 @@
     </item>
     <item>
      <property name="text">
+      <string>yummy_anime</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
       <string>anilibria</string>
      </property>
     </item>
     <item>
      <property name="text">
       <string>animevost</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>yummy_anime_org</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>yummy_anime</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>dreamcast</string>
      </property>
     </item>
     <item>
@@ -453,7 +443,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Процессы:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_tg_2">
+   <widget class="QLabel" name="label_version">
     <property name="geometry">
      <rect>
       <x>10</x>

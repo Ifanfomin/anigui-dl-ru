@@ -1,2 +1,5 @@
+cmake -B build -S . \
+  -DCMAKE_PREFIX_PATH=/home/ifan/Qt/6.11.1/gcc_64
+cmake --build build  
 cmake --build build --target bootstrap_backend
 cmake --build build --target build_python_backend

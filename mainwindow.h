@@ -14,6 +14,7 @@
 #include <QFontMetrics>
 #include <QFileDialog>
 #include <QAbstractItemView>
+#include <QFile>
 
 #include "logwindow.h"
 

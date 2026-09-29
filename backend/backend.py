@@ -1,9 +1,9 @@
-import sys
 import json
-import socks
 import socket
-from anicli_api.source import anilibria, animego, animevost, dreamcast, sameband, yummy_anime, yummy_anime_org
+import sys
 
+import socks
+from anicli_api.source import anilibria, animego, animevost, sameband, yummy_anime
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -17,14 +17,10 @@ def get_extractor(provider):
             ex = animego.Extractor()
         case "animevost":
             ex = animevost.Extractor()
-        case "dreamcast":
-            ex = dreamcast.Extractor()
         case "sameband":
             ex = sameband.Extractor()
         case "yummy_anime":
             ex = yummy_anime.Extractor()
-        case "yummy_anime_org":
-            ex = yummy_anime_org.Extractor()
 
     return ex
 
